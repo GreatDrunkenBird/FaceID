@@ -1,56 +1,69 @@
-import face_recognition as fr
 import cv2
 import numpy as np
-import os
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 
-path = "./train/"
+font = cv2.FONT_HERSHEY_SIMPLEX
 
-known_inds = []
-known_names = []
-known_name_encodings = []
+cap = cv2.VideoCapture("Contagem_exercicio.mp4")
+# cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
 
-images = os.listdir(path)
-for img in images:
-    image = fr.load_image_file(path + img)
-    image_path = path + img
-    encoding = fr.face_encodings(image)[0]
-
-    known_name_encodings.append(encoding)
-    known_inds.append(os.path.splitext(os.path.basename(image_path))[0].capitalize())
+hue_list = [0, 109, 74, 98]
 
 
-for ind in known_inds:
-    nome = ind.split('_')[0]
-    nivel = ind.split('_')[-1]
-    known_names.append(nome)
+def search_contours(mask):
+    mask = mask
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    i = 0
 
-Tk().withdraw()
-filename = askopenfilename()
-image = cv2.imread(filename)
-# image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    for contour in contours:
+        if i == 0:
+            i = 1
+            continue
 
-face_locations = fr.face_locations(image)
-face_encodings = fr.face_encodings(image, face_locations)
+        M = cv2.moments(contour)
+        if M['m00'] != 0.0:
+            x = int(M['m10'] / M['m00'])
+            y = int(M['m01'] / M['m00'])
+        else:
+            x, y = 0, 0
 
-for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-    matches = fr.compare_faces(known_name_encodings, face_encoding)
-    name = ""
+        if len(contour) == 3:
+            cv2.drawContours(video, [contour], -1, (0, 255, 0), 2)
+            cv2.putText(video, 'Triangle', (x, y),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
-    face_distances = fr.face_distance(known_name_encodings, face_encoding)
-    best_match = np.argmin(face_distances)
+        elif len(contour) == 4:
+            cv2.drawContours(video, [contour], -1, (0, 255, 0), 2)
+            cv2.putText(video, 'Quadrilateral', (x, y),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        elif len(contour) > 10:
+            cv2.drawContours(video, [contour], -1, (0, 255, 0), 2)
+            cv2.putText(video, 'circle', (x, y),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
-    if matches[best_match]:
-        name = known_names[best_match]
-
-    cv2.rectangle(image, (left, top), (right, bottom), (0, 255, 0), 2)
-    cv2.rectangle(image, (left, bottom - 15), (right, bottom), (0, 255, 0), cv2.FILLED)
-    font = cv2.FONT_HERSHEY_DUPLEX
-    cv2.putText(image, name, (left + 6, bottom - 6), font, 1.0, (0, 0, 0), 1)
-    print(f"Nome: {nome}, Nível de acesso: {nivel}")
+    return mask
 
 
-cv2.imshow("Result", image)
-cv2.waitKey(0)
+while cap.isOpened():
+    ret, video = cap.read()
+    if ret:
+        hsv = cv2.cvtColor(video, cv2.COLOR_BGR2HSV)
+        for hue in hue_list:
+            lower_hue = hue - 90
+            upper_hue = hue + 90
+
+            lower_hsv = np.array([lower_hue, 50, 20])
+            upper_hsv = np.array([upper_hue, 255, 255])
+
+            mask = cv2.inRange(hsv, lower_hsv, upper_hsv)
+
+            b_a = search_contours(mask)
+
+            cv2.imshow('Video', video)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+    else:
+        break
+
+cap.release()
 cv2.destroyAllWindows()
