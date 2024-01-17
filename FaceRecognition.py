@@ -39,8 +39,8 @@ def select_img():
 
 def display_img():
     global image_cv
-    blue,green,red = cv2.split(image_cv)
-    image = cv2.merge((red,green,blue))
+    blue, green, red = cv2.split(image_cv)
+    image = cv2.merge((red, green, blue))
     im = Image.fromarray(image)
     imgtk = ImageTk.PhotoImage(image=im)
     render = imgtk
@@ -73,19 +73,20 @@ def face_rec():
         display_img()
     return
 
-#User interface
+
+# User interface
 root = Tk()
 root.geometry("1000x600")
 root.title("Face Recognition")
 
-#load = ImageTk.PhotoImage(Image.open("elon.jpg"))
+# load = ImageTk.PhotoImage(Image.open("elon.jpg"))
 
-#Generate password
-select_button = Button(root, text = "Select Image", command=select_img)
+
+select_button = Button(root, text="Select Image", command=select_img)
 select_button.place(x=847, y=80)
 
-indf_button = Button(root, text = "Identify Face", command=face_rec)
+indf_button = Button(root, text="Identify Face", command=face_rec)
 indf_button.place(x=847, y=120)
 
-#Exit and close the app
+# Exit and close the app
 root.mainloop()
